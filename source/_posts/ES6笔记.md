@@ -345,3 +345,117 @@ l; // 'world'
 //这实际上说明，对象的解构赋值是下面形式的简写
 let { foo: foo, bar: bar } = { foo: 'aaa', bar: 'bbb' };
 ```
+
+**默认值**
+
+默认值生效的条件是，对象的属性值严格等于 undefined。
+
+```javascript
+var { x = 3 } = { x: undefined };
+x; // 3
+
+var { x = 3 } = { x: null };
+x; // null
+```
+
+**注意点**
+（1）如果要将一个已经声明的变量用于解构赋值，必须非常小心。
+
+```javascript
+// 错误的写法
+let x;
+{x} = {x: 1};
+// SyntaxError: syntax error
+
+//上面代码的写法会报错，因为 JavaScript 引擎会将{x}理解成一个代码块，从而发生语法错误。只有不将大括号写在行首，避免 JavaScript 将其解释为代码块，才能解决这个问题。
+// 正确的写法
+let x;
+({x} = {x: 1});
+```
+
+（2）解构赋值允许等号左边的模式之中，不放置任何变量名。因此，可以写出非常古怪的赋值表达式。
+
+```javascript
+({} = [true, false]);
+({} = 'abc');
+({} = []);
+
+//虽然毫无意义，但是语法是合法的，可以执行。
+```
+
+（3）由于数组本质是特殊的对象，因此可以对数组进行对象属性的解构。
+
+```javascript
+let arr = [1, 2, 3];
+let { 0: first, [arr.length - 1]: last } = arr;
+first; // 1
+last; // 3
+```
+
+## 字符串的解构赋值
+
+字符串也可以解构赋值。这是因为此时，字符串被转换成了一个类似数组的对象。
+
+```javascript
+const [a, b, c, d, e] = 'hello';
+a; // "h"
+b; // "e"
+c; // "l"
+d; // "l"
+e; // "o"
+
+//类似数组的对象都有一个length属性，因此还可以对这个属性解构赋值。
+let { length: len } = 'hello';
+len; // 5
+```
+
+## 数值和布尔值的解构赋值
+
+解构赋值时，如果等号右边是数值和布尔值，则会先转为对象。
+
+```javascript
+let { toString: s } = 123;
+s === Number.prototype.toString; // true
+
+let { toString: s } = true;
+s === Boolean.prototype.toString; // true
+
+//数值和布尔值的包装对象都有toString属性，因此变量s都能取到值。
+```
+
+解构赋值的规则是，只要等号右边的值不是对象或数组，就先将其转为对象。由于 **undefined** 和 **null** 无法转为对象，所以对它们进行解构赋值，都会报错。
+
+## 函数参数的解构赋值
+
+```javascript
+//函数的参数也可以使用解构赋值。
+function add([x, y]) {
+  return x + y;
+}
+
+add([1, 2]); // 3
+
+[[1, 2], [3, 4]].map(([a, b]) => a + b);
+// [ 3, 7 ]
+
+//函数参数的解构也可以使用默认值。
+function move({ x = 0, y = 0 } = {}) {
+  return [x, y];
+}
+
+move({ x: 3, y: 8 }); // [3, 8]
+move({ x: 3 }); // [3, 0]
+move({}); // [0, 0]
+move(); // [0, 0]
+
+//下面的写法会得到不一样的结果。
+function move({ x, y } = { x: 0, y: 0 }) {
+  return [x, y];
+}
+
+move({ x: 3, y: 8 }); // [3, 8]
+move({ x: 3 }); // [3, undefined]
+move({}); // [undefined, undefined]
+move(); // [0, 0]
+//上面代码是为函数move的参数指定默认值，而不是为变量x和y指定默认值，所以会得到与前一种写法不同的结果。
+```
