@@ -392,7 +392,7 @@ first; // 1
 last; // 3
 ```
 
-## 字符串的解构赋值
+#### 字符串的解构赋值
 
 字符串也可以解构赋值。这是因为此时，字符串被转换成了一个类似数组的对象。
 
@@ -409,7 +409,7 @@ let { length: len } = 'hello';
 len; // 5
 ```
 
-## 数值和布尔值的解构赋值
+#### 数值和布尔值的解构赋值
 
 解构赋值时，如果等号右边是数值和布尔值，则会先转为对象。
 
@@ -425,7 +425,7 @@ s === Boolean.prototype.toString; // true
 
 解构赋值的规则是，只要等号右边的值不是对象或数组，就先将其转为对象。由于 **undefined** 和 **null** 无法转为对象，所以对它们进行解构赋值，都会报错。
 
-## 函数参数的解构赋值
+#### 函数参数的解构赋值
 
 ```javascript
 //函数的参数也可以使用解构赋值。
@@ -458,4 +458,111 @@ move({ x: 3 }); // [3, undefined]
 move({}); // [undefined, undefined]
 move(); // [0, 0]
 //上面代码是为函数move的参数指定默认值，而不是为变量x和y指定默认值，所以会得到与前一种写法不同的结果。
+```
+
+#### 用途
+
+```javascript
+//（1）交换变量的值
+let x = 1;
+let y = 2;
+
+[x, y] = [y, x];
+
+//（2）从函数返回多个值
+function example() {
+  return [1, 2, 3];
+}
+let [a, b, c] = example();
+
+function example() {
+  return {
+    foo: 1,
+    bar: 2,
+  };
+}
+let { foo, bar } = example();
+
+//（3）函数参数的定义
+// 参数是一组有次序的值
+function f([x, y, z]) { ... }
+f([1, 2, 3]);
+
+// 参数是一组无次序的值
+function f({x, y, z}) { ... }
+f({z: 3, y: 2, x: 1});
+
+//（4）提取 JSON 数据
+let jsonData = {
+  id: 42,
+  status: "OK",
+  data: [867, 5309]
+};
+
+let { id, status, data: number } = jsonData;
+
+console.log(id, status, number);
+// 42, "OK", [867, 5309]
+
+//（5）函数参数的默认值
+jQuery.ajax = function (url, {
+  async = true,
+  beforeSend = function () {},
+  cache = true,
+  complete = function () {},
+  crossDomain = false,
+  global = true,
+  // ... more config
+} = {}) {
+  // ... do stuff
+};
+
+//（6）遍历 Map 结构
+//任何部署了 Iterator 接口的对象，都可以用for...of循环遍历。Map 结构原生支持 Iterator 接口，配合变量的解构赋值，获取键名和键值就非常方便。
+
+const map = new Map();
+map.set('first', 'hello');
+map.set('second', 'world');
+
+for (let [key, value] of map) {
+  console.log(key + " is " + value);
+}
+// first is hello
+// second is world
+```
+
+## 字符串的扩展
+
+#### 模板字符串
+
+模板字符串（template string）是增强版的字符串，用反引号（`）标识。它可以当作普通字符串使用，也可以用来定义多行字符串，或者在字符串中嵌入变量。
+
+```javascript
+// 字符串中嵌入变量
+let name = 'Bob',
+  time = 'today';
+`Hello ${name}, how are you ${time}?`;
+```
+
+## 字符串的新增方法
+
+**实例方法：**
+
+- includes()：返回布尔值，表示是否找到了参数字符串。
+- startsWith()：返回布尔值，表示参数字符串是否在原字符串的头部。
+- endsWith()：返回布尔值，表示参数字符串是否在原字符串的尾部。
+  （这三个方法都支持第二个参数，表示开始搜索的位置。）
+- repeat()：返回一个新字符串，表示将原字符串重复 n 次。（参数如果是小数，会被取整。）
+
+**实例方法：**
+
+- padStart()：用于头部补全；
+- padEnd()：用于尾部补全；
+
+```javascript
+'x'.padStart(5, 'ab'); // 'ababx'
+'x'.padStart(4, 'ab'); // 'abax'
+
+'x'.padEnd(5, 'ab'); // 'xabab'
+'x'.padEnd(4, 'ab'); // 'xaba'
 ```
