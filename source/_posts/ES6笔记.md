@@ -565,4 +565,250 @@ let name = 'Bob',
 
 'x'.padEnd(5, 'ab'); // 'xabab'
 'x'.padEnd(4, 'ab'); // 'xaba'
+
+//如果原字符串的长度，等于或大于最大长度，则字符串补全不生效，返回原字符串。
+//如果用来补全的字符串与原字符串，两者的长度之和超过了最大长度，则会截去超出位数的补全字符串。
+//如果省略第二个参数，默认使用空格补全长度。
+```
+
+**实例方法：**
+
+- trimStart()：消除字符串头部的空格,不会修改原始字符串；
+- trimEnd()：消除尾部的空格,不会修改原始字符串；
+
+## 正则的扩展
+
+#### RegExp 构造函数
+
+ES5 中，RegExp 构造函数的参数有两种情况：
+
+```javascript
+//1.参数是字符串，这时第二个参数表示正则表达式的修饰符
+var regex = new RegExp('xyz', 'i');
+// 等价于
+var regex = /xyz/i;
+
+//2.参数是一个正则表示式，这时会返回一个原有正则表达式的拷贝。
+var regex = new RegExp(/xyz/i);
+// 等价于
+var regex = /xyz/i;
+//但是，ES5 不允许此时使用第二个参数添加修饰符，否则会报错。
+var regex = new RegExp(/xyz/, 'i');
+//Uncaught TypeError: Cannot supply flags when constructing one RegExp from another
+```
+
+ES6 改变了这种行为。如果 RegExp 构造函数第一个参数是一个正则对象，那么可以使用第二个参数指定修饰符。而且，返回的正则表达式会忽略原有的正则表达式的修饰符，只使用新指定的修饰符。
+
+```javascript
+new RegExp(/abc/gi, 'i').flags;
+// "i"
+```
+
+#### 字符串的正则方法
+
+字符串对象共有 4 个方法，可以使用正则表达式：match()、replace()、search()和 split()。
+
+ES6 将这 4 个方法，在语言内部全部调用 RegExp 的实例方法，从而做到所有与正则相关的方法，全都定义在 RegExp 对象上。
+
+- String.prototype.match 调用 RegExp.prototype[Symbol.match]
+- String.prototype.replace 调用 RegExp.prototype[Symbol.replace]
+- String.prototype.search 调用 RegExp.prototype[Symbol.search]
+- String.prototype.split 调用 RegExp.prototype[Symbol.split]
+
+## 数值的扩展
+
+#### 二进制和八进制表示法
+
+二进制和八进制数值的新的写法，分别用前缀 0b（或 0B）和 0o（或 0O）表示。
+
+#### Number.isFinite(), Number.isNaN()
+
+Number.isFinite()用来检查一个数值是否为有限的（finite），即不是 Infinity。注意，如果参数类型不是数值，Number.isFinite 一律返回 false。
+
+Number.isNaN()用来检查一个值是否为 NaN。
+
+**区别：**
+它们与传统的全局方法 isFinite()和 isNaN()的区别在于，传统方法先调用 Number()将非数值的值转为数值，再进行判断，而这两个新方法只对数值有效，Number.isFinite()对于非数值一律返回 false, Number.isNaN()只有对于 NaN 才返回 true，非 NaN 一律返回 false。
+
+```javascript
+isFinite(25); // true
+isFinite('25'); // true
+Number.isFinite(25); // true
+Number.isFinite('25'); // false
+
+isNaN(NaN); // true
+isNaN('NaN'); // true
+Number.isNaN(NaN); // true
+Number.isNaN('NaN'); // false
+Number.isNaN(1); // false
+```
+
+#### Number.parseInt(), Number.parseFloat()
+
+ES6 将全局方法 parseInt()和 parseFloat()，移植到 Number 对象上面，行为完全保持不变。
+
+```javascript
+// ES5的写法
+parseInt('12.34'); // 12
+parseFloat('123.45#'); // 123.45
+
+// ES6的写法
+Number.parseInt('12.34'); // 12
+Number.parseFloat('123.45#'); // 123.45
+
+//这样做的目的，是逐步减少全局性方法，使得语言逐步模块化。
+Number.parseInt === parseInt; // true
+Number.parseFloat === parseFloat; // true
+```
+
+#### Number.isInteger()
+
+Number.isInteger()用来判断一个数值是否为整数。
+
+```javascript
+Number.isInteger(25); // true
+Number.isInteger(25.1); // false
+
+//JavaScript 内部，整数和浮点数采用的是同样的储存方法，所以 25 和 25.0 被视为同一个值。
+Number.isInteger(25); // true
+Number.isInteger(25.0); // true
+```
+
+#### Math 对象的扩展
+
+**Math.trunc():** 用于去除一个数的小数部分，返回整数部分。
+
+```javascript
+Math.trunc(4.1); // 4
+Math.trunc(4.9); // 4
+Math.trunc(-4.1); // -4
+Math.trunc(-4.9); // -4
+Math.trunc(-0.1234); // -0
+
+//非数值，Math.trunc内部使用Number方法将其先转为数值。
+Math.trunc('123.456'); // 123
+Math.trunc(true); //1
+Math.trunc(false); // 0
+Math.trunc(null); // 0
+
+//对于空值和无法截取整数的值，返回NaN。
+
+//没有部署这个方法的环境，可以用下面的代码模拟。
+Math.trunc =
+  Math.trunc ||
+  function(x) {
+    return x < 0 ? Math.ceil(x) : Math.floor(x);
+  };
+```
+
+**Math.sign():** 用来判断一个数到底是正数、负数、还是零。对于非数值，会先将其转换为数值。返回 5 种值：
+
+- 参数为正数，返回+1；
+- 参数为负数，返回-1；
+- 参数为 0，返回 0；
+- 参数为-0，返回-0;
+- 其他值，返回 NaN。
+
+没有部署这个方法的环境，可以用下面的代码模拟：
+
+```javascript
+Math.sign =
+  Math.sign ||
+  function(x) {
+    x = +x; // convert to a number
+    if (x === 0 || isNaN(x)) {
+      return x;
+    }
+    return x > 0 ? 1 : -1;
+  };
+```
+
+**Math.cbrt():** 用于计算一个数的立方根
+对于没有部署这个方法的环境，可以用下面的代码模拟:
+
+```javascript
+Math.cbrt =
+  Math.cbrt ||
+  function(x) {
+    var y = Math.pow(Math.abs(x), 1 / 3);
+    return x < 0 ? -y : y;
+  };
+```
+
+#### 指数运算符
+
+ES2016 新增了一个指数运算符（\*\*）。
+
+```javascript
+2 ** 2; // 4
+2 ** 3; // 8
+```
+
+这个运算符的一个特点是右结合，而不是常见的左结合。多个指数运算符连用时，是从最右边开始计算的。
+
+// 相当于 2 ** (3 ** 2)
+2 ** 3 ** 2;
+// 512
+
+## 函数的扩展
+
+#### 函数参数的默认值
+
+**基本用法**
+ES6 之前，不能直接为函数的参数指定默认值，只能采用变通的方法。
+
+```javascript
+function log(x, y) {
+  y = y || 'World';
+  console.log(x, y);
+}
+
+log('Hello'); // Hello World
+log('Hello', 'China'); // Hello China
+log('Hello', ''); // Hello World
+
+//这种写法的缺点在于，如果参数y赋值了，但是对应的布尔值为false，则该赋值不起作用。
+//为了避免这个问题，通常需要先判断一下参数y是否被赋值，如果没有，再等于默认值。
+if (typeof y === 'undefined') {
+  y = 'World';
+}
+```
+
+ES6 允许为函数的参数设置默认值，即直接写在参数定义的后面。
+
+```javascript
+function log(x, y = 'World') {
+  console.log(x, y);
+}
+
+log('Hello'); // Hello World
+log('Hello', 'China'); // Hello China
+log('Hello', ''); // Hello
+
+//参数变量是默认声明的，所以不能用let或const再次声明。
+function foo(x = 5) {
+  let x = 1; // error
+  const x = 2; // error
+}
+```
+
+**与解构赋值默认值结合使用**
+
+```javascript
+//只使用对象的解构赋值默认值，没有使用函数参数的默认值
+function foo({ x, y = 5 }) {
+  console.log(x, y);
+}
+
+foo({}); // undefined 5
+foo({ x: 1 }); // 1 5
+foo({ x: 1, y: 2 }); // 1 2
+foo(); // TypeError: Cannot read property 'x' of undefined
+
+//当参数不是一个对象时，变量x,y不会生成，就会报错。通过提供函数参数的默认值，就可以避免这种情况。
+function foo({ x, y = 5 } = {}) {
+  console.log(x, y);
+}
+
+foo(); // undefined 5
 ```
