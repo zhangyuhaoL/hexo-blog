@@ -812,3 +812,310 @@ function foo({ x, y = 5 } = {}) {
 
 foo(); // undefined 5
 ```
+
+**函数的 length 属性**
+
+指定了默认值以后，函数的 length 属性，将返回没有指定默认值的参数个数。
+
+(function (a) {}).length // 1
+
+(function (a = 5) {}).length // 0
+
+(function (a, b, c = 5) {}).length // 2
+
+如果设置了默认值的参数不是尾参数，那么 length 属性也不再计入后面的参数了。
+
+(function (a = 0, b, c) {}).length // 0
+
+(function (a, b = 1, c) {}).length // 1
+
+**作用域**
+一旦设置了参数的默认值，函数进行声明初始化时，参数会形成一个单独的作用域（context）。等到初始化结束，这个作用域就会消失。这种语法行为，在不设置参数默认值时，是不会出现的。
+
+```javascript
+var x = 1;
+
+function f(x, y = x) {
+  console.log(y);
+}
+
+f(2); // 2
+
+//函数f调用时，参数y = x形成一个单独的作用域。这个作用域里面，变量x本身没有定义，所以指向外层的全局变量x。函数调用时，函数体内部的局部变量x影响不到默认值变量x。
+let x = 1;
+
+function f(y = x) {
+  let x = 2;
+  console.log(y);
+}
+
+f(); // 1
+//如果此时，全局变量x不存在，就会报错。
+```
+
+一个复杂的例子
+
+```javascript
+var x = 1;
+function foo(
+  x,
+  y = function() {
+    x = 2;
+  }
+) {
+  var x = 3;
+  y();
+  console.log(x);
+}
+
+foo(); // 3
+x; // 1
+//函数foo的参数形成一个单独作用域。这个作用域里面，首先声明了变量x，然后声明了变量y，y的默认值是一个匿名函数。
+//这个匿名函数内部的变量x，指向同一个作用域的第一个参数x。
+//函数foo内部又声明了一个内部变量x，该变量与第一个参数x由于不是同一个作用域，所以不是同一个变量，因此执行y后，内部变量x和外部全局变量x的值都没变。
+
+//如果将var x = 3的var去除，函数foo的内部变量x就指向第一个参数x，与匿名函数内部的x是一致的，所以最后输出的就是2，而外层的全局变量x依然不受影响。
+var x = 1;
+function foo(
+  x,
+  y = function() {
+    x = 2;
+  }
+) {
+  x = 3;
+  y();
+  console.log(x);
+}
+
+foo(); // 2
+x; // 1
+```
+
+**应用**
+利用参数默认值，可以指定某一个参数不得省略，如果省略就抛出一个错误。
+
+```javascript
+function throwIfMissing() {
+  throw new Error('Missing parameter');
+}
+
+function foo(mustBeProvided = throwIfMissing()) {
+  return mustBeProvided;
+}
+
+foo();
+// Error: Missing parameter
+```
+
+#### rest 参数
+
+ES6 引入 rest 参数（形式为...变量名），用于获取函数的多余参数，这样就不需要使用 arguments 对象了。rest 参数搭配的变量是一个数组，该变量将多余的参数放入数组中。
+
+```javascript
+function add(...values) {
+  let sum = 0;
+
+  for (var val of values) {
+    sum += val;
+  }
+
+  return sum;
+}
+
+add(2, 5, 3); // 10
+
+// arguments变量的写法
+function sortNumbers() {
+  return Array.prototype.slice.call(arguments).sort();
+}
+//arguments对象不是数组，而是一个类似数组的对象。所以为了使用数组的方法，必须使用Array.prototype.slice.call先将其转为数组。
+
+// rest参数的写法
+const sortNumbers = (...numbers) => numbers.sort();
+//rest 参数就不存在这个问题，它就是一个真正的数组，数组特有的方法都可以使用。
+```
+
+**注意：** rest 参数之后不能再有其他参数（即只能是最后一个参数），否则会报错。
+函数的 length 属性，不包括 rest 参数。
+
+#### 箭头函数
+
+ES6 允许使用“箭头”（=>）定义函数。
+
+```javascript
+var f = v => v;
+
+//等同于
+var f = function(v) {
+  return v;
+};
+```
+
+如果箭头函数不需要参数或需要多个参数，就使用一个圆括号代表参数部分。
+
+```javascript
+var f = () => 5;
+// 等同于
+var f = function() {
+  return 5;
+};
+
+var sum = (num1, num2) => num1 + num2;
+// 等同于
+var sum = function(num1, num2) {
+  return num1 + num2;
+};
+
+//如果箭头函数的代码块部分多于一条语句，就要使用大括号将它们括起来，并且使用return语句返回。
+var sum = (num1, num2) => {
+  return num1 + num2;
+};
+```
+
+**注意点**
+
+- 函数体内的 this 对象，就是定义时所在的对象，而不是使用时所在的对象。(this 对象的指向是可变的，但是在箭头函数中，它是固定的。)
+- 不可以当作构造函数，也就是说，不可以使用 new 命令，否则会抛出一个错误。
+- 不可以使用 arguments 对象，该对象在函数体内不存在。如果要用，可以用 rest 参数代替。
+- 不可以使用 yield 命令，因此箭头函数不能用作 Generator 函数。
+
+**不适用场合**
+第一个场合是定义对象的方法，且该方法内部包括 this。
+
+```javascript
+const cat = {
+  lives: 9,
+  jumps: () => {
+    this.lives--;
+  },
+};
+```
+
+cat.jumps()方法是一个箭头函数，这是错误的。调用 cat.jumps()时，如果是普通函数，该方法内部的 this 指向 cat；如果写成上面那样的箭头函数，使得 this 指向全局对象，因此不会得到预期结果。
+这是因为对象不构成单独的作用域，导致 jumps 箭头函数定义时的作用域就是全局作用域。
+
+第二个场合是需要动态 this 的时候，也不应使用箭头函数。
+
+```javascript
+var button = document.getElementById('press');
+button.addEventListener('click', () => {
+  this.classList.toggle('on');
+});
+```
+
+上面代码运行时，点击按钮会报错，因为 button 的监听函数是一个箭头函数，导致里面的 this 就是全局对象。如果改成普通函数，this 就会动态指向被点击的按钮对象。
+
+#### 尾调用优化
+
+**什么是尾调用？**
+尾调用（Tail Call）是函数式编程的一个重要概念，是指某个函数的最后一步是调用另一个函数。
+
+```javascript
+function f(x) {
+  return g(x);
+}
+
+//以下都不属于尾调用
+// 情况一
+function f(x) {
+  let y = g(x);
+  return y;
+}
+
+// 情况二
+function f(x) {
+  return g(x) + 1;
+}
+
+// 情况三
+function f(x) {
+  g(x);
+}
+```
+
+**尾调用优化**
+
+函数调用会在内存形成一个“调用记录”，又称“调用帧”（call frame），保存调用位置和内部变量等信息。如果在函数 A 的内部调用函数 B，那么在 A 的调用帧上方，还会形成一个 B 的调用帧。等到 B 运行结束，将结果返回到 A，B 的调用帧才会消失。如果函数 B 内部还调用函数 C，那就还有一个 C 的调用帧，以此类推。所有的调用帧，就形成一个“调用栈”（call stack）。
+
+尾调用由于是函数的最后一步操作，所以不需要保留外层函数的调用帧，因为调用位置、内部变量等信息都不会再用到了，只要直接用内层函数的调用帧，取代外层函数的调用帧就可以了。
+
+```javascript
+function f() {
+  let m = 1;
+  let n = 2;
+  return g(m + n);
+}
+f();
+
+// 等同于
+function f() {
+  return g(3);
+}
+f();
+
+// 等同于
+g(3);
+
+//如果函数g不是尾调用，函数f就需要保存内部变量m和n的值、g的调用位置等信息。
+//但由于调用g之后，函数f就结束了，所以执行到最后一步，完全可以删除f(x)的调用帧，只保留g(3)的调用帧。
+```
+
+这就叫做“尾调用优化”（Tail call optimization），即只保留内层函数的调用帧。如果所有函数都是尾调用，那么完全可以做到每次执行时，调用帧只有一项，这将大大节省内存。这就是“尾调用优化”的意义。
+
+**注意:** 只有不再用到外层函数的内部变量，内层函数的调用帧才会取代外层函数的调用帧，否则就无法进行“尾调用优化”。
+
+```javascript
+function addOne(a) {
+  var one = 1;
+  function inner(b) {
+    return b + one;
+  }
+  return inner(a);
+}
+//上面的函数不会进行尾调用优化，因为内层函数inner用到了外层函数addOne的内部变量one。
+```
+
+**尾递归**
+函数调用自身，称为递归。如果尾调用自身，就称为尾递归。
+递归非常耗费内存，因为需要同时保存成千上百个调用帧，很容易发生“栈溢出”错误（stack overflow）。但对于尾递归来说，由于只存在一个调用帧，所以永远不会发生“栈溢出”错误。
+
+```javascript
+function factorial(n) {
+  if (n === 1) return 1;
+  return n * factorial(n - 1);
+}
+
+factorial(5); // 120
+//计算n的阶乘，最多需要保存n个调用记录，复杂度 O(n) 。
+
+//改写成尾递归，只保留一个调用记录，复杂度 O(1) 。
+function factorial(n, total) {
+  if (n === 1) return total;
+  return factorial(n - 1, n * total);
+}
+
+factorial(5, 1); // 120
+------------------------------
+//一个比较著名的例子，就是计算 Fibonacci 数列
+//非尾递归的 Fibonacci 数列实现如下:
+function Fibonacci (n) {
+  if ( n <= 1 ) {return 1};
+
+  return Fibonacci(n - 1) + Fibonacci(n - 2);
+}
+
+Fibonacci(10) // 89
+Fibonacci(100) // 超时
+Fibonacci(500) // 超时
+
+//尾递归优化过的 Fibonacci 数列实现如下:
+function Fibonacci2 (n , ac1 = 1 , ac2 = 1) {
+  if( n <= 1 ) {return ac2};
+
+  return Fibonacci2 (n - 1, ac2, ac1 + ac2);
+}
+
+Fibonacci2(100) // 573147844013817200000
+Fibonacci2(1000) // 7.0330367711422765e+208
+Fibonacci2(10000) // Infinity
+```
